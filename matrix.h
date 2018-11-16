@@ -8,18 +8,23 @@
 #ifndef MOORE_MATRIX_H
 #define MOORE_MATRIX_H
 
-template <class T, std::size_t ROW, std::size_t COL>
+template<class T, std::size_t ROW, std::size_t COL>
 class Matrix {
 public:
     Matrix() {
-        for(auto& col : data) {
+        for (auto &col : data) {
             std::fill(col.begin(), col.end(), 0);
         }
     }
 
-    std::array<T, COL>& operator[](std::size_t index) { return data[index]; }
+    inline const auto min_side() const { return ROW > COL ? ROW : COL; }
+
+    auto& operator[](std::size_t index) { return data[index]; }
+
     const std::array<T, COL> operator[](std::size_t index) const { return data[index]; }
+
     auto begin() { return data.begin(); }
+
     auto end() { return data.end(); }
 
 private:

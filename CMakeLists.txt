@@ -3,4 +3,4 @@ project(moore)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(moore main.cpp Node.h Node.cpp matrix.h response.h )
+add_executable(moore main.cpp matrix.h response.h )

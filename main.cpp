@@ -4,9 +4,18 @@
 #include "matrix.h"
 #include "response.h"
 
-const int n = 50;
-const int MAX_DISTANCE = 2;
-const int MAX_DEGREE = 7;
+struct Restriction {
+    int n;
+    int max_distance;
+    int max_degree;
+};
+
+const Restriction _5{5,2,2};
+const Restriction _10{10,2,3};
+const Restriction _50{50,2,7};
+const Restriction _3250{3250,2,57};
+
+const auto& use = _10;
 
 /*
  * General info:
@@ -17,17 +26,11 @@ const int MAX_DEGREE = 7;
  *
  */
 
-
-
-
-
-
-
-template <typename T>
-void apsp(T& inMat, T& outMat){
-    for(int i = 0; i < n; i++){
-        for(int j = 0; j < n; j++){
-            if(inMat[i][j] == 1 || (inMat[i][j] == 2 && inMat[j][i] == 1) || inMat[i][j] == -1){
+template<typename T>
+void apsp(T &inMat, T &outMat) {
+    for (int i = 0; i < inMat.min_side(); i++) {
+        for (int j = 0; j < inMat.min_side(); j++) {
+            if (inMat[i][j] == 1 || (inMat[i][j] == 2 && inMat[j][i] == 1) || inMat[i][j] == -1) {
                 outMat[i][j] = 1;
             } else {
                 outMat[i][j] = 0;
@@ -35,14 +38,13 @@ void apsp(T& inMat, T& outMat){
         }
     }
 
-
-    for(int k = 0; k < n; k++ ){
-        for(int i = 0; i < n; i++){
-            for(int j = 0; j < n; j++){
-                if (outMat[i][k] == 0 || outMat[k][j] == 0 || i == j){
+    for (int k = 0; k < inMat.min_side(); k++) {
+        for (int i = 0; i < inMat.min_side(); i++) {
+            for (int j = 0; j < inMat.min_side(); j++) {
+                if (outMat[i][k] == 0 || outMat[k][j] == 0 || i == j) {
                     continue;
                 }
-                if(outMat[i][j] == 0 || outMat[i][j] > outMat[i][k] + outMat[k][j]){
+                if (outMat[i][j] == 0 || outMat[i][j] > outMat[i][k] + outMat[k][j]) {
                     outMat[i][j] = outMat[i][k] + outMat[k][j];
                 }
             }
@@ -51,15 +53,15 @@ void apsp(T& inMat, T& outMat){
 
 }
 
-template <typename T,typename S>
-void randomGraph(T& graph, S& degrees){
+template<typename T, typename S>
+void randomGraph(T &graph, S &degrees, const unsigned int max_degree) {
 
     int tmp = 0;
 
-    for(int i = 0; i < n; i++){
-        for(int j = 0; j < MAX_DEGREE; j++){
-            tmp = rand() % n;
-            if(graph[i][tmp] == 0 && tmp != i){
+    for (int i = 0; i < graph.min_side(); i++) {
+        for (int j = 0; j < max_degree; j++) {
+            tmp = rand() % graph.min_side();
+            if (graph[i][tmp] == 0 && tmp != i) {
                 graph[i][tmp] = 2;
                 graph[tmp][i] = 1;
                 degrees[i]++;
@@ -74,29 +76,29 @@ void randomGraph(T& graph, S& degrees){
     }
 }
 
-template <typename T,typename S>
-int satisfied(T& graph, T& distances, S& degrees){
-    for(int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
+template<typename T, typename S>
+int satisfied(T &graph, T &distances, const unsigned int max_distance, S &degrees, const unsigned int max_degree) {
+    for (int i = 0; i < graph.min_side(); i++) {
+        for (int j = 0; j < graph.min_side(); j++) {
             if (i == j) {
                 continue;
             }
-            if (distances[i][j] == 0 || distances[i][j] > MAX_DISTANCE) {
+            if (distances[i][j] == 0 || distances[i][j] > max_distance) {
                 return 0;
             }
         }
     }
 
-    for(auto& i : graph){
-        for(auto& j : i){
-            if(j == -1){
+    for (auto &i : graph) {
+        for (auto &j : i) {
+            if (j == -1) {
                 return 0;
             }
         }
     }
 
-    for(auto& i : degrees){
-        if(i > MAX_DEGREE){
+    for (auto &i : degrees) {
+        if (i > max_degree) {
             return 0;
         }
     }
@@ -106,120 +108,66 @@ int satisfied(T& graph, T& distances, S& degrees){
 }
 
 // chooses an unsatisfied player and improves his situation
-template <typename T,typename S>
-void performImprovement(int n, int d, int k, T& graph, T& distances, S& degrees){
-    int player = chooseUnsatisfiedNode(n,d,k,graph,distances,degrees);
+template<typename T, typename S>
+void performImprovement(int n, int d, int k, T &graph, T &distances, S &degrees) {
+    int player = chooseUnsatisfiedNode(n, d, k, graph, distances, degrees);
 
     int tmp = degrees[player];
 
-    //std::cout << "unsat player: " << player << std::endl;
-
-    if(rejectEdges(player, n, k, graph, degrees)){ // if the player accepted edges from nodes with too high degree, reject those edges
-        apsp(graph,distances); // update the distances
+    // if the player accepted edges from nodes with too high degree, reject those edges
+    if (rejectEdges(player, n, k, graph, degrees)) {
+        // update the distances
+        apsp(graph, distances);
         int tmp = degrees[player];
         //std::cout << "we rejected some edge" << std::endl;
-
-
-
     }
-    if(establishDistances(player, n, d, graph, distances, degrees)){ // make sure the player reaches every node
-        cleanRejectedEdges(player, n, graph, degrees); // if there are rejected edges from the player, delete them
-        apsp(graph,distances);
-        //std::cout << "we established some distances and possibly cleaned rejected edges" << std::endl;
+
+    // make sure the player reaches every node
+    if (establishDistances(player, n, d, graph, distances, degrees)) {
+        // if there are rejected edges from the player, delete them
+        cleanRejectedEdges(player, n, graph, degrees);
+        apsp(graph, distances);
     } else {
         cleanRejectedEdges(player, n, graph, degrees);
         int tmp = degrees[player];
-        reduceDegree(player, n, k, graph, degrees); // if the distances were alright, reduce the players' degree by deleting incoming edges
-        apsp(graph,distances);
-        //std::cout << "we didn't have to establish distances, thus tried to reduce the degree" << std::endl;
+        // if the distances were alright, reduce the players' degree by deleting incoming edges
+        reduceDegree(player, n, k, graph, degrees);
+        apsp(graph, distances);
     }
 }
 
 int main() {
+    constexpr int n = use.n;
+    const int MAX_DISTANCE = use.max_distance;
+    const int MAX_DEGREE = use.max_degree;
 
     auto seed = time(NULL);//1542200294;//
     std::cout << "Seed: " << seed << std::endl << std::endl;
     srand(seed);
 
-    Matrix<int, n, n> graph,distances;
-    std::array<int,n> degrees{};
+    Matrix<int, n, n> graph, distances;
+    std::array<int, n> degrees{};
 
-    randomGraph(graph,degrees);
+    randomGraph(graph, degrees, use.max_degree);
 
-    apsp(graph,distances);
+    apsp(graph, distances);
 
-
-    /*
-    std::cout << std::endl;
-    for(auto& i : graph){
-        for(auto& j: i){
-            std::cout << j << " ";
-        }
-        std::cout << std::endl;
-    }
-    std::cout << std::endl;
-
-    for(auto& i : distances){
-        for(auto& j: i){
-            std::cout << j << " ";
-        }
-        std::cout << std::endl;
-    }
-
-    std::cout << std::endl;
-    for(auto& i : degrees){
-        std::cout << i << " ";
-
-    }
-    std::cout << std::endl;
-
-     */
     int counter = 0;
 
-    while(!satisfied(graph, distances, degrees)){
+    while (!satisfied(graph, distances, use.max_distance, degrees, use.max_degree)) {
         counter++;
-        if(counter%100==0){
+        if (counter % 1000 == 0) {
             std::cout << counter << std::endl;
         }
 
-        performImprovement(n, MAX_DISTANCE, MAX_DEGREE, graph, distances, degrees);
-        apsp(graph,distances);
-
-
-        /*
-        std::cout << std::endl;
-        for(auto& i : graph){
-            for(auto& j: i){
-                std::cout << j << " ";
-            }
-            std::cout << std::endl;
-        }
-        std::cout << std::endl;
-
-        for(auto& i : distances){
-            for(auto& j: i){
-                std::cout << j << " ";
-            }
-            std::cout << std::endl;
-        }
-
-        std::cout << std::endl;
-        for(auto& i : degrees){
-            std::cout << i << " ";
-
-        }
-        std::cout << std::endl << std::endl;
-
-         */
+        performImprovement(n, use.max_distance, use.max_degree, graph, distances, degrees);
+        apsp(graph, distances);
     }
 
 
-
-
-
     std::cout << "Adjacency matrix:" << std::endl;
-    for(auto& i : graph){
-        for(auto& j: i){
+    for (auto &i : graph) {
+        for (auto &j: i) {
             std::cout << j << " ";
         }
         std::cout << std::endl;
@@ -227,8 +175,8 @@ int main() {
     std::cout << std::endl;
 
     std::cout << "Distance matrix:" << std::endl;
-    for(auto& i : distances){
-        for(auto& j: i){
+    for (auto &i : distances) {
+        for (auto &j: i) {
             std::cout << j << " ";
         }
         std::cout << std::endl;
@@ -236,7 +184,7 @@ int main() {
 
     std::cout << "degrees:" << std::endl;
     std::cout << std::endl;
-    for(auto& i : degrees){
+    for (auto &i : degrees) {
         std::cout << i << " ";
 
     }
@@ -244,47 +192,8 @@ int main() {
 
     std::cout << "number of iterations: " << counter << std::endl;
 
-    int a = satisfied(graph, distances, degrees);
+    int a = satisfied(graph, distances, use.max_distance, degrees, use.max_degree);
 
     return 0;
-
-
-  /*  const int n = NUMBER_OF_NODES;
-    int d = MAX_DISTANCE;
-    int k = MAX_DEGREE;
-    int seed = 1234;
-
-    srand(seed);
-
-    //int **graph;
-    //int **distances;
-    //int *degrees;
-
-    Matrix graph(n);
-    Matrix distances(n);
-    std::array<int,n> degrees;
-
-    randomGraph(graph,degrees);
-    apsp(graph,distances);
-
-
-    for(int i = 0; i < n; i++){
-        for(int j = 0; j < n; j++){
-            std::cout << graph(i,j);
-        }
-        std::cout << std::endl;
-    }
-
-    std::cout << std::endl;
-
-    for(int i = 0; i < n; i++){
-        for(int j = 0; j < n; j++){
-            std::cout << distances(i,j);
-        }
-        std::cout << std::endl;
-    }
-
-    std::cout << "Hello, World!" << std::endl;
-    return 0;*/
 }
 
