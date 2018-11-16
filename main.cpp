@@ -26,6 +26,7 @@ const auto& use = _10;
  *
  */
 
+// All Pair Shortest Path
 template<typename T>
 void apsp(T &inMat, T &outMat) {
     for (int i = 0; i < inMat.min_side(); i++) {
@@ -76,8 +77,10 @@ void randomGraph(T &graph, S &degrees, const unsigned int max_degree) {
     }
 }
 
+// Are all nodes happy?
 template<typename T, typename S>
 int satisfied(T &graph, T &distances, const unsigned int max_distance, S &degrees, const unsigned int max_degree) {
+    // Are distances < max_distance?
     for (int i = 0; i < graph.min_side(); i++) {
         for (int j = 0; j < graph.min_side(); j++) {
             if (i == j) {
@@ -89,6 +92,7 @@ int satisfied(T &graph, T &distances, const unsigned int max_distance, S &degree
         }
     }
 
+    // Are there rejected edges?
     for (auto &i : graph) {
         for (auto &j : i) {
             if (j == -1) {
@@ -97,6 +101,7 @@ int satisfied(T &graph, T &distances, const unsigned int max_distance, S &degree
         }
     }
 
+    // All degrees < max_degree
     for (auto &i : degrees) {
         if (i > max_degree) {
             return 0;
@@ -138,8 +143,6 @@ void performImprovement(int n, int d, int k, T &graph, T &distances, S &degrees)
 
 int main() {
     constexpr int n = use.n;
-    const int MAX_DISTANCE = use.max_distance;
-    const int MAX_DEGREE = use.max_degree;
 
     auto seed = time(NULL);//1542200294;//
     std::cout << "Seed: " << seed << std::endl << std::endl;
