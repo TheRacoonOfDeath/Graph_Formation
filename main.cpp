@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iterator>
 #include <stdlib.h>
 #include <array>
 #include "matrix.h"
@@ -167,35 +168,15 @@ int main() {
         apsp(graph, distances);
     }
 
+    graph.print("Adjacency matrix:");
 
-    std::cout << "Adjacency matrix:" << std::endl;
-    for (auto &i : graph) {
-        for (auto &j: i) {
-            std::cout << j << " ";
-        }
-        std::cout << std::endl;
-    }
-    std::cout << std::endl;
-
-    std::cout << "Distance matrix:" << std::endl;
-    for (auto &i : distances) {
-        for (auto &j: i) {
-            std::cout << j << " ";
-        }
-        std::cout << std::endl;
-    }
+    distances.print("Distance matrix:");
 
     std::cout << "degrees:" << std::endl;
-    std::cout << std::endl;
-    for (auto &i : degrees) {
-        std::cout << i << " ";
+    std::ostream_iterator<int> out_it (std::cout," ");
+    std::copy(degrees.cbegin(), degrees.cend(), out_it);
 
-    }
-    std::cout << std::endl;
-
-    std::cout << "number of iterations: " << counter << std::endl;
-
-    int a = satisfied(graph, distances, use.max_distance, degrees, use.max_degree);
+    std::cout << std::endl << "number of iterations: " << counter << std::endl;
 
     return 0;
 }

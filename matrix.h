@@ -1,7 +1,7 @@
 //
 // Created by moedinger on 13.11.18.
 //
-
+#include <iostream>
 #include <cstddef>
 #include <array>
 
@@ -26,6 +26,17 @@ public:
     auto begin() { return data.begin(); }
 
     auto end() { return data.end(); }
+
+    void print(std::string title) {
+        std::cout << title << std::endl;
+        for (auto &i : *this) {
+            for (auto &j: i) {
+                std::cout << j << " ";
+            }
+            std::cout << std::endl;
+        }
+        std::cout << std::endl;
+    }
 
 private:
     std::array<std::array<T, COL>, ROW> data;
