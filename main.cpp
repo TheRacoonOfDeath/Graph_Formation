@@ -2,6 +2,7 @@
 #include <iterator>
 #include <stdlib.h>
 #include <array>
+#include <chrono>
 #include "matrix.h"
 #include "response.h"
 
@@ -158,15 +159,16 @@ int main() {
 
     int counter = 0;
 
+    auto start = std::chrono::high_resolution_clock::now();
+
     while (!satisfied(graph, distances, use.max_distance, degrees, use.max_degree)) {
         counter++;
-        if (counter % 1000 == 0) {
-            std::cout << counter << std::endl;
-        }
 
         performImprovement(n, use.max_distance, use.max_degree, graph, distances, degrees);
         apsp(graph, distances);
     }
+    auto finish = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(finish-start);
 
     graph.print("Adjacency matrix:");
 
@@ -175,6 +177,9 @@ int main() {
     std::cout << "degrees:" << std::endl;
     std::ostream_iterator<int> out_it (std::cout," ");
     std::copy(degrees.cbegin(), degrees.cend(), out_it);
+    std::cout << std::endl << std::endl;
+
+    std::cout << "Timings per 1000 improvements: " << (duration.count()/(counter/1000.0)) << "ms" << std::endl;
 
     std::cout << std::endl << "number of iterations: " << counter << std::endl;
 
