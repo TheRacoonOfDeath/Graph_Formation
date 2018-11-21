@@ -2,8 +2,8 @@
 #include <iterator>
 #include <stdlib.h>
 #include <array>
+#include <algorithm>
 #include <Eigen/Dense>
-#include "matrix.h"
 #include "response.h"
 
 struct Restriction {
@@ -28,51 +28,23 @@ const auto& use = _10;
  *
  */
 
-// All Pair Shortest Path
-template<typename T>
-void apsp(T &inMat, T &outMat) {
-    for (int i = 0; i < inMat.min_side(); i++) {
-        for (int j = 0; j < inMat.min_side(); j++) {
-            if (inMat[i][j] == 1 || (inMat[i][j] == 2 && inMat[j][i] == 1) || inMat[i][j] == -1) {
-                outMat[i][j] = 1;
-            } else {
-                outMat[i][j] = 0;
-            }
-        }
-    }
-
-    for (int k = 0; k < inMat.min_side(); k++) {
-        for (int i = 0; i < inMat.min_side(); i++) {
-            for (int j = 0; j < inMat.min_side(); j++) {
-                if (outMat[i][k] == 0 || outMat[k][j] == 0 || i == j) {
-                    continue;
-                }
-                if (outMat[i][j] == 0 || outMat[i][j] > outMat[i][k] + outMat[k][j]) {
-                    outMat[i][j] = outMat[i][k] + outMat[k][j];
-                }
-            }
-        }
-    }
-
-}
-
 template<typename T, typename S>
 void randomGraph(T &graph, S &degrees, const unsigned int max_degree) {
 
     int tmp = 0;
 
-    for (int i = 0; i < graph.min_side(); i++) {
+    for (int i = 0; i < min_side(graph); i++) {
         for (int j = 0; j < max_degree; j++) {
-            tmp = rand() % graph.min_side();
-            if (graph[i][tmp] == 0 && tmp != i) {
-                graph[i][tmp] = 2;
-                graph[tmp][i] = 1;
+            tmp = rand() % min_side(graph);
+            if (graph(i,tmp) == 0 && tmp != i) {
+                graph(i,tmp) = 2;
+                graph(tmp,i) = 1;
                 degrees[i]++;
                 degrees[tmp]++;
             }
 
-            int a = graph[i][tmp];
-            int b = graph[tmp][i];
+            int a = graph(i,tmp);
+            int b = graph(tmp,i);
 
             //std::cout << i << " " << tmp << " " << a << " " << b << std::endl;
         }
@@ -83,32 +55,23 @@ void randomGraph(T &graph, S &degrees, const unsigned int max_degree) {
 template<typename T, typename S>
 int satisfied(T &graph, T &distances, const unsigned int max_distance, S &degrees, const unsigned int max_degree) {
     // Are distances < max_distance?
-    for (int i = 0; i < graph.min_side(); i++) {
-        for (int j = 0; j < graph.min_side(); j++) {
+    for (int i = 0; i < min_side(graph); i++) {
+        for (int j = 0; j < min_side(graph); j++) {
             if (i == j) {
                 continue;
             }
-            if (distances[i][j] == 0 || distances[i][j] > max_distance) {
+            if (distances(i,j) == 0 || distances(i,j) > max_distance) {
                 return 0;
             }
         }
     }
 
     // Are there rejected edges?
-    for (auto &i : graph) {
-        for (auto &j : i) {
-            if (j == -1) {
-                return 0;
-            }
-        }
-    }
+    if(graph.minCoeff() < 0)
+        return 0;
 
-    // All degrees < max_degree
-    for (auto &i : degrees) {
-        if (i > max_degree) {
-            return 0;
-        }
-    }
+    if(*std::max_element(degrees.begin(), degrees.end()) > max_degree)
+        return 0;
 
     return 1;
 
@@ -146,11 +109,12 @@ void performImprovement(int n, int d, int k, T &graph, T &distances, S &degrees)
 int main() {
     constexpr int n = use.n;
 
-    auto seed = time(NULL);//1542200294;//
+    auto seed = 1542200294;//time(NULL);//1542200294;//
     std::cout << "Seed: " << seed << std::endl << std::endl;
     srand(seed);
 
-    Matrix<int, n, n> graph, distances;
+    Eigen::Matrix<int, n, n> graph;
+    Eigen::Matrix<int, n, n> distances;
     std::array<int, n> degrees{};
 
     randomGraph(graph, degrees, use.max_degree);
@@ -169,9 +133,11 @@ int main() {
         apsp(graph, distances);
     }
 
-    graph.print("Adjacency matrix:");
+    std::cout << "Adjacency matrix:" << std::endl;
+    std::cout << graph << std::endl;
 
-    distances.print("Distance matrix:");
+    std::cout << "Distance matrix:" << std::endl;
+    std::cout << distances << std::endl;
 
     std::cout << "degrees:" << std::endl;
     std::ostream_iterator<int> out_it (std::cout," ");

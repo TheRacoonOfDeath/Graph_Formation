@@ -20,6 +20,39 @@ void randperm(int *a, int n) {
     }
 }
 
+template<typename T>
+inline auto min_side(T& matrix) {
+    return std::max(matrix.rows(), matrix.cols());
+}
+
+// All Pair Shortest Path
+template<typename T>
+void apsp(T &inMat, T &outMat) {
+    for (int i = 0; i < min_side(inMat); i++) {
+        for (int j = 0; j < min_side(inMat); j++) {
+            if (inMat(i,j) == 1 || (inMat(i,j) == 2 && inMat(j,i) == 1) || inMat(i,j) == -1) {
+                outMat(i,j) = 1;
+            } else {
+                outMat(i,j) = 0;
+            }
+        }
+    }
+
+    for (int k = 0; k < min_side(inMat); k++) {
+        for (int i = 0; i < min_side(inMat); i++) {
+            for (int j = 0; j < min_side(inMat); j++) {
+                if (outMat(i,k) == 0 || outMat(k,j) == 0 || i == j) {
+                    continue;
+                }
+                if (outMat(i,j) == 0 || outMat(i,j) > outMat(i,k) + outMat(k,j)) {
+                    outMat(i,j) = outMat(i,k) + outMat(k,j);
+                }
+            }
+        }
+    }
+
+}
+
 template<typename T, typename S>
 int chooseUnsatisfiedNode(int n, int d, int k, T &graph, T &distances, S &degrees) {
     int a[n];
@@ -35,7 +68,7 @@ int chooseUnsatisfiedNode(int n, int d, int k, T &graph, T &distances, S &degree
             if (idx == j) {
                 continue;
             }
-            if (graph[j][idx] == -1 || distances[idx][j] > d || distances[idx][j] == 0) {
+            if (graph(j,idx) == -1 || distances(idx,j) > d || distances(idx,j) == 0) {
                 return idx;
             }
         }
@@ -50,9 +83,9 @@ int chooseUnsatisfiedNode(int n, int d, int k, T &graph, T &distances, S &degree
 template<typename T, typename S>
 void cleanRejectedEdges(int player, int n, T &graph, S &degrees) {
     for (int j = 0; j < n; j++) {
-        if (graph[j][player] == -1) { // this only happens while graph[player][j] == 2
-            graph[j][player] = 0;
-            graph[player][j] = 0;
+        if (graph(j,player) == -1) { // this only happens while graph(player,j) == 2
+            graph(j,player) = 0;
+            graph(player,j) = 0;
             degrees[player]--;
         }
     }
@@ -62,8 +95,8 @@ template<typename T, typename S>
 int rejectEdges(int player, int n, int k, T &graph, S &degrees) {
     int ret = 0;
     for (int j = 0; j < n; j++) {
-        if (graph[player][j] == 1 && degrees[j] > k) {
-            graph[player][j] = -1;
+        if (graph(player,j) == 1 && degrees[j] > k) {
+            graph(player,j) = -1;
             degrees[player]--;
             ret = 1;
         }
@@ -79,7 +112,7 @@ int findFittingNeighbour(int player, int target, int n, int d, T &graph, T &dist
 
     for (int i = 0; i < n; i++) {
         int idx = a[i];
-        if (distances[idx][target] != 0 && distances[idx][target] < d && graph[idx][player] != -1) {
+        if (distances(idx,target) != 0 && distances(idx,target) < d && graph(idx,player) != -1) {
             return idx;
         }
     }
@@ -94,10 +127,10 @@ int establishDistances(int player, int n, int d, T &graph, T &distances, S &degr
     int ret = 0;
 
     for (int j = 0; j < n; j++) {
-        if (j != player && (distances[player][j] > d || distances[player][j] == 0)) {
-            if (graph[player][j] == 0) { // no edge between the two exists --> establish an edge
-                graph[player][j] = 2;
-                graph[j][player] = 1;
+        if (j != player && (distances(player,j) > d || distances(player,j) == 0)) {
+            if (graph(player,j) == 0) { // no edge between the two exists --> establish an edge
+                graph(player,j) = 2;
+                graph(j,player) = 1;
                 degrees[player]++;
                 degrees[j]++;
 
@@ -106,8 +139,8 @@ int establishDistances(int player, int n, int d, T &graph, T &distances, S &degr
             } else { //edge between them is blocked --> search the neighbourhood for suitable node
                 int idx = findFittingNeighbour(player, j, n, d, graph, distances);
                 if (idx != -1) {
-                    graph[player][idx] = 2;
-                    graph[idx][player] = 1;
+                    graph(player,idx) = 2;
+                    graph(idx,player) = 1;
                     degrees[player]++;
                     degrees[idx]++;
 
@@ -136,12 +169,12 @@ void reduceDegree(int player, int n, int k, T &graph, S &degrees) {
         if (degrees[player] <= k) {
             break;
         }
-        if (graph[player][a[i]] == 1) {
-            graph[player][a[i]] = -1;
+        if (graph(player,a[i]) == 1) {
+            graph(player,a[i]) = -1;
             degrees[player]--;
-        } else if (graph[player][a[i]] == 2) {
-            graph[player][a[i]] = 0;
-            graph[a[i]][player] = 0;
+        } else if (graph(player,a[i]) == 2) {
+            graph(player,a[i]) = 0;
+            graph(a[i],player) = 0;
             degrees[player]--;
             degrees[a[i]]--;
         }
