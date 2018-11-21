@@ -109,7 +109,7 @@ void performImprovement(int n, int d, int k, T &graph, T &distances, S &degrees)
 int main() {
     constexpr int n = use.n;
 
-    auto seed = 1542200294;//time(NULL);//1542200294;//
+    auto seed = 1542200254;//time(NULL);//1542200294;//
     std::cout << "Seed: " << seed << std::endl << std::endl;
     srand(seed);
 
