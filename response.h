@@ -2,7 +2,7 @@
 // Created by nickerl on 14.11.18.
 //
 
-#include <stdlib.h>
+#include <cstdlib>
 
 #ifndef MOORE_RESPONSE_H
 #define MOORE_RESPONSE_H
