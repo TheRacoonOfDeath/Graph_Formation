@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <array>
 #include <algorithm>
+#include <chrono>
+#include <numeric>
 #include <Eigen/Dense>
 #include "response.h"
 
@@ -109,7 +111,7 @@ void performImprovement(int n, int d, int k, T &graph, T &distances, S &degrees)
 int main() {
     constexpr int n = use.n;
 
-    auto seed = 1542200254;//time(NULL);//1542200294;//
+    auto seed = 15;//1542200254;//time(NULL);//1542200294;//
     std::cout << "Seed: " << seed << std::endl << std::endl;
     srand(seed);
 
@@ -123,15 +125,19 @@ int main() {
 
     int counter = 0;
 
+    auto start = std::chrono::high_resolution_clock::now();
+
     while (!satisfied(graph, distances, use.max_distance, degrees, use.max_degree)) {
         counter++;
-        if (counter % 1000 == 0) {
-            std::cout << counter << std::endl;
-        }
+        //if (counter % 1000 == 0) {
+            //std::cout << counter << std::endl;
+        //}
 
         performImprovement(n, use.max_distance, use.max_degree, graph, distances, degrees);
         apsp(graph, distances);
     }
+    auto finish = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(finish-start);
 
     std::cout << "Adjacency matrix:" << std::endl;
     std::cout << graph << std::endl;
@@ -142,6 +148,9 @@ int main() {
     std::cout << "degrees:" << std::endl;
     std::ostream_iterator<int> out_it (std::cout," ");
     std::copy(degrees.cbegin(), degrees.cend(), out_it);
+    std::cout << std::endl << std::endl;
+
+    std::cout << "Timings per 1000 improvements: " << (duration.count()/(counter/1000.0)) << "ms" << std::endl;
 
     std::cout << std::endl << "number of iterations: " << counter << std::endl;
 
