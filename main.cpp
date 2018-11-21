@@ -2,6 +2,7 @@
 #include <iterator>
 #include <stdlib.h>
 #include <array>
+#include <Eigen/Dense>
 #include "matrix.h"
 #include "response.h"
 
